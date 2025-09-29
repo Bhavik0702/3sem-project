@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Student Attendance System (Admin)</title>
+    <style>
+         :root {
+            --bg: #0f1724;
+            --card: #0b1220;
+            --accent: #3b82f6;
+            --muted: #94a3b8;
+            --success: #10b981
+        }
+        
+        * {
+            box-sizing: border-box;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial
+        }
+        
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #071024 0%, #0b1526 100%);
+            color: #e6eef8
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 32px auto;
+            padding: 24px
+        }
+        
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6)
+        }
+        
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px
+        }
+        
+        h1 {
+            font-size: 20px;
+            margin: 0
+        }
+        
+        small {
+            color: var(--muted)
+        }
+        /* Login */
+        
+        .login-wrap {
+            max-width: 420px;
+            margin: 40px auto
+        }
+        
+        .form-row {
+            margin-bottom: 12px
+        }
+        
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px
+        }
+        
+        input[type=text],
+        input[type=password] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent;
+            color: inherit
+        }
+        
+        button {
+            background: var(--accent);
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer
+        }
+        
+        .muted {
+            color: var(--muted);
+            font-size: 13px
+        }
+        /* Dashboard */
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 18px
+        }
+        
+        .students-list {
+            max-height: 460px;
+            overflow: auto;
+            margin-top: 12px
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+        
+        th,
+        td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 14px
+        }
+        
+        th {
+            font-size: 13px;
+            color: var(--muted)
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: inherit;
+            cursor: pointer
+        }
+        
+        .present {
+            background: var(--success);
+            color: #062018;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: none
+        }
+        
+        .absent {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 6px 10px;
+            border-radius: 8px;
+            color: inherit
+        }
+        /* small screens */
+        
+        @media (max-width:880px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 12px
+            }
+        }
+        
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            background: #0b2133;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.03)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <header>
+                <div>
+                    <h1>Student Attendance System</h1>
+                    <div class="muted">Admin portal — mark & export attendance </div>
+                </div>
+                <div id="admin-meta" style="display:none">
+                    <small id="admin-name" class="muted"></small>
+                    <button id="logoutBtn" class="btn-ghost" style="margin-left:12px">Logout</button>
+                </div>
+            </header>
+
+            <!-- Student Attendance Check (Public) -->
+            <div class="card" style="margin-bottom:24px;">
+                <h2 style="text-align:center;margin:0 0 12px 0">Check Your Attendance</h2>
+                <div style="text-align:center;">
+                    <input type="text" id="rollNo" placeholder="Enter Roll Number" style="padding:8px;margin:5px;">
+                    <button onclick="checkAttendance()" style="padding:8px 15px;">View Attendance</button>
+                </div>
+                <div id="result" style="margin-top:16px;"></div>
+            </div>
+
+            <!-- Login view -->
+            <div id="loginView" class="login-wrap">
+                <div style="text-align:center;margin-bottom:16px">
+                    <h2 style="margin:0 0 6px 0">Admin Login</h2>
+                    <div class="muted">Use the default demo credentials to sign in</div>
+                </div>
+                <div class="card" style="padding:18px;">
+                    <div class="form-row">
+                        <label>Username</label>
+                        <input id="username" type="text" placeholder="admin" />
+                    </div>
+                    <div class="form-row">
+                        <label>Password</label>
+                        <input id="password" type="password" placeholder="password123" />
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                        <div class="muted">Demo: <strong>admin</strong> / <strong>password123</strong></div>
+                        <div>
+                            <button id="loginBtn">Sign in</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard view -->
+            <div id="dashboardView" style="display:none">
+                <div class="grid">
+                    <div>
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                <h3 style="margin:0">Today's Attendance</h3>
+                                <div class="muted" id="todayDate"></div>
+                            </div>
+                            <div>
+                                <button id="markAllPresent" class="btn-ghost">Mark All Present</button>
+                                <button id="markAllAbsent" class="btn-ghost">Mark All Absent</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:12px">
+                            <input id="search" type="text" placeholder="Search by name or id" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit" />
+                        </div>
+
+                        <div class="students-list card" style="margin-top:12px;padding:10px">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Attendance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTbody"></tbody>
+                            </table>
+                        </div>
+
+                        <div style="margin-top:12px;display:flex;gap:8px">
+                            <button id="saveBtn">Save Attendance</button>
+                            <button id="exportBtn" class="btn-ghost">Export CSV</button>
+                            <button id="clearBtn" class="btn-ghost">Clear All</button>
+                        </div>
+                    </div>
+
+                    <aside>
+                        <div class="card" style="padding:12px">
+                            <h4 style="margin-top:0">Manage Students</h4>
+                            <div style="margin-top:8px">
+                                <input id="newName" type="text" placeholder="Student name" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-bottom:8px" />
+                                <input id="newId" type="text" placeholder="Student ID (eg. S001)" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-bottom:8px" />
+                                <div style="display:flex;gap:8px">
+                                    <button id="addStudent" class="btn-ghost">Add</button>
+                                    <button id="removeSelected" class="btn-ghost">Remove Selected</button>
+                                </div>
+                            </div>
+
+                            <hr style="border:0;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0" />
+                            <div>
+                                <h5 style="margin:6px 0">Legend</h5>
+                                <div class="muted">Click the toggle to mark present/absent. Use checkboxes to select & remove students.</div>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top:12px;padding:12px">
+                            <h4 style="margin:0 0 8px 0">Summary</h4>
+                            <div class="muted">Present: <span id="presentCnt">0</span></div>
+                            <div class="muted">Absent: <span id="absentCnt">0</span></div>
+                            <div style="margin-top:10px">
+                                <button id="loadSample" class="btn-ghost">Load Sample Students</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" style="display:none"></div>
+
+    <script>
+        // --- Student Attendance Check Script ---
+        const attendanceData = {
+            "101": {
+                name: "Rahul",
+                total: 30,
+                present: 26
+            },
+            "102": {
+                name: "Priya",
+                total: 30,
+                present: 28
+            },
+            "103": {
+                name: "Aman",
+                total: 30,
+                present: 25
+            }
+        };
+
+        function checkAttendance() {
+            const roll = document.getElementById("rollNo").value.trim();
+            let output = "";
+
+            // 1. Check static attendanceData
+            let student = attendanceData[roll];
+            if (student) {
+                let percentage = ((student.present / student.total) * 100).toFixed(2);
+                output = `
+                    <h3>Attendance Report</h3>
+                    <table>
+                        <tr><th>Name</th><td>${student.name}</td></tr>
+                        <tr><th>Roll No</th><td>${roll}</td></tr>
+                        <tr><th>Total Classes</th><td>${student.total}</td></tr>
+                        <tr><th>Present</th><td>${student.present}</td></tr>
+                        <tr><th>Percentage</th><td>${percentage}%</td></tr>
+                    </table>
+                `;
+                document.getElementById("result").innerHTML = output;
+                return;
+            }
+
+            // 2. Check admin's student list and today's attendance
+            // Use students and attendance from admin portal logic
+            if (typeof students !== "undefined" && Array.isArray(students)) {
+                const found = students.find(s => s.id === roll);
+                if (found) {
+                    // Attendance for today
+                    const status = attendance && attendance[roll] ? attendance[roll] : "absent";
+                    output = `
+                        <h3>Attendance Report</h3>
+                        <table>
+                            <tr><th>Name</th><td>${found.name}</td></tr>
+                            <tr><th>Student ID</th><td>${roll}</td></tr>
+                            <tr><th>Status Today</th><td style="color:${status==='present'?'green':'red'};font-weight:bold">${status.charAt(0).toUpperCase()+status.slice(1)}</td></tr>
+                        </table>
+                    `;
+                    document.getElementById("result").innerHTML = output;
+                    return;
+                }
+            }
+
+            // 3. Not found
+            output = "<p style='color:red'>❌ No record found for Student ID " + roll + "</p>";
+            document.getElementById("result").innerHTML = output;
+        }
+
+        // --- Admin Portal Script ---
+        // --- Simple front-end only admin auth (demo) ---
+        const DEMO_USER = {
+            username: 'admin',
+            password: 'password123'
+        }; // change as needed
+
+        // DOM
+        const loginView = document.getElementById('loginView');
+        const dashboardView = document.getElementById('dashboardView');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminMeta = document.getElementById('admin-meta');
+        const adminName = document.getElementById('admin-name');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const studentsTbody = document.getElementById('studentsTbody');
+        const todayDate = document.getElementById('todayDate');
+        const presentCnt = document.getElementById('presentCnt');
+        const absentCnt = document.getElementById('absentCnt');
+        const toast = document.getElementById('toast');
+
+        // Controls
+        const addStudentBtn = document.getElementById('addStudent');
+        const newName = document.getElementById('newName');
+        const newId = document.getElementById('newId');
+        const removeSelectedBtn = document.getElementById('removeSelected');
+        const saveBtn = document.getElementById('saveBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const loadSample = document.getElementById('loadSample');
+        const markAllPresent = document.getElementById('markAllPresent');
+        const markAllAbsent = document.getElementById('markAllAbsent');
+        const searchInput = document.getElementById('search');
+
+        // Basic storage keys
+        const KEY_AUTH = 'sas_admin_logged_in';
+        const KEY_STUDENTS = 'sas_students';
+        const KEY_ATT = 'sas_attendance_' + new Date().toISOString().slice(0, 10); // date-specific key (YYYY-MM-DD)
+
+        // State
+        let students = []; // {id,name,selected}
+        let attendance = {}; // {id: 'present'|'absent'}
+
+        // Helpers
+        function showToast(msg, ms = 2200) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', ms);
+        }
+
+        function saveStudentsToStorage() {
+            localStorage.setItem(KEY_STUDENTS, JSON.stringify(students));
+        }
+
+        function loadStudentsFromStorage() {
+            const raw = localStorage.getItem(KEY_STUDENTS);
+            if (raw) students = JSON.parse(raw);
+            else students = [];
+        }
+
+        function saveAttendanceToStorage() {
+            localStorage.setItem(KEY_ATT, JSON.stringify(attendance));
+        }
+
+        function loadAttendanceFromStorage() {
+            const raw = localStorage.getItem(KEY_ATT);
+            if (raw) attendance = JSON.parse(raw);
+            else attendance = {};
+        }
+
+        function renderStudents(filter = '') {
+            studentsTbody.innerHTML = '';
+            const f = filter.trim().toLowerCase();
+            const list = students.filter(s => (s.id + ' ' + s.name).toLowerCase().includes(f));
+            if (list.length === 0) {
+                studentsTbody.innerHTML = '<tr><td colspan="3" class="muted">No students found</td></tr>';
+                updateSummary();
+                return;
+            }
+            list.forEach(s => {
+                const tr = document.createElement('tr');
+                const att = attendance[s.id] || 'absent';
+                tr.innerHTML = `
+          <td style="width:90px"><input type="checkbox" data-id="${s.id}" class="selcb" /></td>
+          <td><strong>${s.id}</strong><div class="muted">${s.name}</div></td>
+          <td style="width:180px"><button data-id="${s.id}" class="toggleAtt ${att==='present'? 'present':'absent'}">${att==='present' ? 'Present' : 'Absent'}</button></td>
+        `;
+                studentsTbody.appendChild(tr);
+            });
+            // attach listeners
+            document.querySelectorAll('.toggleAtt').forEach(btn => btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                attendance[id] = attendance[id] === 'present' ? 'absent' : 'present';
+                saveAttendanceToStorage();
+                renderStudents(searchInput.value);
+                updateSummary();
+            }));
+        }
+
+        function updateSummary() {
+            const ids = students.map(s => s.id);
+            const present = ids.filter(id => attendance[id] === 'present').length;
+            const absent = ids.length - present;
+            presentCnt.innerText = present;
+            absentCnt.innerText = absent;
+        }
+
+        // Auth
+        function signIn(username, password) {
+            if (username === DEMO_USER.username && password === DEMO_USER.password) {
+                localStorage.setItem(KEY_AUTH, '1');
+                return true;
+            }
+            return false;
+        }
+
+        function signOut() {
+            localStorage.removeItem(KEY_AUTH);
+        }
+
+        function isSignedIn() {
+            return localStorage.getItem(KEY_AUTH) === '1';
+        }
+
+        // Init
+        function init() {
+            todayDate.innerText = new Date().toLocaleDateString();
+            loadStudentsFromStorage();
+            loadAttendanceFromStorage();
+            if (isSignedIn()) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            loginView.style.display = 'block';
+            dashboardView.style.display = 'none';
+            adminMeta.style.display = 'none';
+        }
+
+        function showDashboard() {
+            loginView.style.display = 'none';
+            dashboardView.style.display = 'block';
+            adminMeta.style.display = 'flex';
+            adminName.innerText = DEMO_USER.username;
+            renderStudents();
+            updateSummary();
+        }
+
+        // Event listeners
+        loginBtn.addEventListener('click', () => {
+            const u = usernameInput.value.trim();
+            const p = passwordInput.value.trim();
+            if (signIn(u, p)) {
+                showToast('Signed in');
+                showDashboard();
+            } else showToast('Invalid credentials');
+        });
+        logoutBtn.addEventListener('click', () => {
+            signOut();
+            showToast('Logged out');
+            showLogin();
+        });
+
+        addStudentBtn.addEventListener('click', () => {
+            const name = newName.value.trim();
+            const id = newId.value.trim();
+            if (!name || !id) {
+                showToast('Enter name and id');
+                return;
+            }
+            if (students.some(s => s.id === id)) {
+                showToast('ID already exists');
+                return;
+            }
+            students.push({
+                id,
+                name
+            });
+            saveStudentsToStorage();
+            newName.value = '';
+            newId.value = '';
+            renderStudents(searchInput.value);
+            updateSummary();
+            showToast('Student added');
+        });
+
+        removeSelectedBtn.addEventListener('click', () => {
+            const sels = Array.from(document.querySelectorAll('.selcb')).filter(cb => cb.checked).map(cb => cb.dataset.id);
+            if (sels.length === 0) {
+                showToast('No student selected');
+                return;
+            }
+            students = students.filter(s => !sels.includes(s.id));
+            // also remove attendance entries
+            sels.forEach(id => delete attendance[id]);
+            saveStudentsToStorage();
+            saveAttendanceToStorage();
+            renderStudents(searchInput.value);
+            updateSummary();
+            showToast('Removed selected');
+        });
+
+        saveBtn.addEventListener('click', () => {
+            saveAttendanceToStorage();
+            showToast('Attendance saved');
+        });
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear all students and attendance?')) {
+                students = [];
+                attendance = {};
+                saveStudentsToStorage();
+                saveAttendanceToStorage();
+                renderStudents();
+                updateSummary();
+                showToast('All cleared');
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            // CSV: id,name,status
+            let csv = 'id,name,status\n';
+            students.forEach(s => {
+                csv += `${s.id},"${s.name}",${attendance[s.id] || 'absent'}\n`;
+            });
+            const blob = new Blob([csv], {
+                type: 'text/csv'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attendance_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        });
+
+        loadSample.addEventListener('click', () => {
+            const sample = [{
+                id: 'S001',
+                name: 'Aarav Patil'
+            }, {
+                id: 'S002',
+                name: 'Rohan Sharma'
+            }, {
+                id: 'S003',
+                name: 'Meera Kulkarni'
+            }, {
+                id: 'S004',
+                name: 'Anshuman Nibude'
+            }, {
+                id: 'S005',
+                name: 'Bhavik Sonawane'
+            }];
+            students = sample;
+            attendance = {};
+            saveStudentsToStorage();
+            saveAttendanceToStorage();
+            renderStudents();
+            updateSummary();
+            showToast('Sample students loaded');
+        });
+
+        markAllPresent.addEventListener('click', () => {
+            students.forEach(s => attendance[s.id] = 'present');
+            saveAttendanceToStorage();
+            renderStudents(searchInput.value);
+            updateSummary();
+            showToast('Marked all present');
+        });
+        markAllAbsent.addEventListener('click', () => {
+            students.forEach(s => attendance[s.id] = 'absent');
+            saveAttendanceToStorage();
+            renderStudents(searchInput.value);
+            updateSummary();
+            showToast('Marked all absent');
+        });
+
+        searchInput.addEventListener('input', e => renderStudents(e.target.value));
+
+        // Keyboard: Enter to login
+        [usernameInput, passwordInput].forEach(i => i.addEventListener('keydown', e => {
+            if (e.key === 'Enter') loginBtn.click();
+        }));
+
+        // When page loads
+        init();
+    </script>
+</body>
+
+</html>
